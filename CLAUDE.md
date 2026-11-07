@@ -199,6 +199,13 @@ Do these one at a time and stop after each step so I can review:
 6. °C / °F toggle + `localStorage` persistence
 7. Polish: loading/error states, styling, attribution footer, README
 
+## Git workflow
+
+- Work directly on `main`. No feature branches.
+- After each build step passes typecheck, lint, test and build, commit and push to `origin main`.
+- Use Conventional Commit messages: `feat:`, `fix:`, `chore:`, `test:`, `docs:`.
+- Never force-push. Never commit while any check is failing.
+
 ## Working with me (learning mode)
 
 - I'm learning TypeScript. The first time you use a TS feature in this project (generics, discriminated unions, type guards, `satisfies`, `z.infer`, `never`, etc.), explain it in 1–2 sentences in your reply — not as long code comments.
