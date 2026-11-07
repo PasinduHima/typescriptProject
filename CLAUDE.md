@@ -199,21 +199,21 @@ Unknown codes fall back to `"Unknown"` — never crash on them.
 
 ## Build order
 
-Steps 1–2 are done. Steps 3–8 run back to back: after each one, run typecheck, lint, test and build, then commit with the given message and push.
+✅ **Build order complete** — all 8 steps are done. New work starts from the Features list and Design decisions below.
 
 1. ✅ Scaffold: Vite `vanilla-ts`, tsconfig rules, ESLint, Prettier, Vitest, npm scripts
 2. ✅ `lib/result.ts`, `lib/assertNever.ts`, `domain/types.ts`, `domain/units.ts`, `domain/weatherCodes.ts` + tests
-3. API layer — `feat: add Zod schemas, API client, geocoding and forecast`
+3. ✅ API layer — `feat: add Zod schemas, API client, geocoding and forecast`
    Zod v4 raw schemas (snake_case, no `.transform()`), real fixtures, `fetchJson` (never throws), `searchCities`, `getForecast`, exported pure mappers, `formatCityLabel`. Tests mock `fetch` with `vi.stubGlobal`.
-4. Search UI — `feat: add city search with debounce and keyboard navigation`
+4. ✅ Search UI — `feat: add city search with debounce and keyboard navigation`
    `state.ts` (one state object, one update function that re-renders), `ui/dom.ts` `getEl(selector, Ctor)` with `instanceof`, `lib/debounce.ts` (fake-timer tests), AbortController, ARIA combobox (↑/↓/Enter/Esc, click, click-outside closes).
-5. Weather display — `feat: show current weather and 5-day forecast`
+5. ✅ Weather display — `feat: show current weather and 5-day forecast`
    Cancel the previous forecast request; current card + 5 days ("Today" first); `domain/formatDayName` (tested); `createElement` + `textContent` only.
-6. Units + persistence — `feat: add °C/°F toggle and remember last city`
+6. ✅ Units + persistence — `feat: add °C/°F toggle and remember last city`
    Accessible two-option toggle; wind follows it (celsius → km/h, fahrenheit → mph); no refetch. `lib/storage.ts` takes `Pick<Storage, "getItem" | "setItem" | "removeItem">`, validates with Zod, removes bad data, try/catch, keys like `weather-app:v1:last-city`. Restore city + unit on startup.
-7. Polish — `feat: polish states, styling and docs`
+7. ✅ Polish — `feat: polish states, styling and docs`
    `domain/errors.ts` `formatError` (exhaustive, tested); start / no-results / loading / error messages in the aria-live region; mobile-first CSS with custom properties, light/dark, `:focus-visible`, reduced motion; Open-Meteo footer; README; `docs/TYPESCRIPT_NOTES.md`.
-8. Nice-to-haves — `feat: add use-my-location and day/night styling`
+8. ✅ Nice-to-haves — `feat: add use-my-location and day/night styling`
    Geolocation wrapped as `Promise<Result<Coordinates>>`, new `AppError` kind `"geolocation"` (`"denied" | "unavailable" | "timeout"`), labelled "Your location", not saved. Day/night styling from `isDay`. Update README and notes.
 
 ## Design decisions
