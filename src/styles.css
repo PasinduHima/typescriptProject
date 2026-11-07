@@ -1,0 +1,43 @@
+/* Minimal styles for the search UI. Full styling comes in step 7. */
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0 auto;
+  max-width: 40rem;
+  padding: 1rem;
+}
+
+.search__label {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.search__combobox {
+  position: relative;
+}
+
+.search__input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.5rem;
+  font: inherit;
+}
+
+.search__results {
+  position: absolute;
+  inset-inline: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: white;
+  border: 1px solid #888;
+}
+
+.search__option {
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.search__option[aria-selected="true"],
+.search__option:hover {
+  background: #dde8ff;
+}

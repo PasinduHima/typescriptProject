@@ -7,10 +7,41 @@
     <title>Weather App</title>
   </head>
   <body>
-    <header>
+    <header class="app-header">
       <h1>Weather App</h1>
     </header>
-    <main id="app"></main>
+
+    <main class="app">
+      <section class="search" aria-label="Find a place">
+        <label class="search__label" for="search-input"
+          >Search for a city</label
+        >
+        <div class="search__combobox" id="combobox">
+          <input
+            id="search-input"
+            class="search__input"
+            type="text"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded="false"
+            aria-controls="search-results"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="e.g. Colombo"
+          />
+          <ul
+            id="search-results"
+            class="search__results"
+            role="listbox"
+            aria-label="Matching places"
+            hidden
+          ></ul>
+        </div>
+      </section>
+
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </main>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
