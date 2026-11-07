@@ -199,6 +199,13 @@ Do these one at a time and stop after each step so I can review:
 6. °C / °F toggle + `localStorage` persistence
 7. Polish: loading/error states, styling, attribution footer, README
 
+## Design decisions
+
+- Dates stay `"YYYY-MM-DD"` strings. To show day names, parse as UTC and format with `Intl.DateTimeFormat` using `timeZone: "UTC"`, so the day never shifts in the browser's timezone.
+- `isDay` arrives as `0`/`1` and is mapped to a `boolean` in the API layer.
+- `weatherCode` stays a `number` and always goes through `getWeatherInfo()`.
+- `ok()` / `err()` return `never` on the unused side (`Result<T, never>`, `Result<never, E>`) so they fit any `Result`.
+
 ## Git workflow
 
 - Work directly on `main`. No feature branches.
