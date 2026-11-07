@@ -40,6 +40,23 @@
       </section>
 
       <p id="status" class="status" role="status" aria-live="polite"></p>
+
+      <section
+        id="current"
+        class="current"
+        aria-labelledby="current-heading"
+        hidden
+      ></section>
+
+      <section
+        id="forecast"
+        class="forecast"
+        aria-labelledby="forecast-heading"
+        hidden
+      >
+        <h2 id="forecast-heading" class="forecast__heading">5-day forecast</h2>
+        <ol id="forecast-list" class="forecast__list"></ol>
+      </section>
     </main>
 
     <script type="module" src="/src/main.ts"></script>

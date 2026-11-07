@@ -1,4 +1,5 @@
 import "./styles.css";
+import { getForecast } from "./api/forecast.ts";
 import { MIN_QUERY_LENGTH, searchCities } from "./api/geocoding.ts";
 import { formatCityLabel } from "./domain/cityLabel.ts";
 import type { City } from "./domain/types.ts";
@@ -15,6 +16,9 @@ const els: Elements = {
   input: getEl("#search-input", HTMLInputElement),
   list: getEl("#search-results", HTMLUListElement),
   status: getEl("#status", HTMLParagraphElement),
+  current: getEl("#current", HTMLElement),
+  forecast: getEl("#forecast", HTMLElement),
+  forecastList: getEl("#forecast-list", HTMLOListElement),
 };
 
 const handlers: Handlers = {
@@ -120,6 +124,28 @@ function onKeyDown(event: KeyboardEvent): void {
   }
 }
 
+// ---------- Forecast ----------
+
+let forecastController: AbortController | null = null;
+
+async function loadForecast(city: City): Promise<void> {
+  forecastController?.abort();
+  const controller = new AbortController();
+  forecastController = controller;
+
+  store.update({ forecast: { status: "loading" } });
+  const result = await getForecast(city, controller.signal);
+
+  // The user picked another city while this one was loading.
+  if (controller !== forecastController) return;
+
+  if (result.ok) {
+    store.update({ forecast: { status: "success", data: result.value } });
+  } else if (result.error.kind !== "aborted") {
+    store.update({ forecast: { status: "error", error: result.error } });
+  }
+}
+
 function selectCity(city: City): void {
   cancelSearch();
   const label = formatCityLabel(city);
@@ -131,6 +157,7 @@ function selectCity(city: City): void {
     isListOpen: false,
     activeIndex: null,
   });
+  void loadForecast(city);
 }
 
 els.input.addEventListener("input", onInput);

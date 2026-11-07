@@ -1,5 +1,9 @@
 import { formatCityLabel } from "../domain/cityLabel.ts";
-import type { City } from "../domain/types.ts";
+import { forecastDayLabel } from "../domain/dates.ts";
+import type { City, CurrentWeather, DailyForecast } from "../domain/types.ts";
+import { formatTemperature, formatWindSpeed } from "../domain/units.ts";
+import { getWeatherInfo } from "../domain/weatherCodes.ts";
+import { assertNever } from "../lib/assertNever.ts";
 import type { AppState } from "../state.ts";
 import { createEl } from "./dom.ts";
 import { getStatusMessage } from "./statusMessage.ts";
@@ -9,11 +13,16 @@ export type Elements = {
   input: HTMLInputElement;
   list: HTMLUListElement;
   status: HTMLParagraphElement;
+  current: HTMLElement;
+  forecast: HTMLElement;
+  forecastList: HTMLOListElement;
 };
 
 export type Handlers = {
   onSelectCity: (city: City) => void;
 };
+
+// ---------- Search ----------
 
 function optionId(index: number): string {
   return `search-option-${index}`;
@@ -60,11 +69,111 @@ function renderSearch(
   }
 }
 
+// ---------- Status ----------
+
 function renderStatus(els: Elements, state: Readonly<AppState>): void {
   const message = getStatusMessage(state);
   // Only touch the live region when the text changes, so it isn't re-announced.
   if (els.status.textContent !== message) {
     els.status.textContent = message;
+  }
+}
+
+// ---------- Weather ----------
+
+/** An emoji icon with an accessible name (screen readers read the label, not the emoji). */
+function weatherIcon(code: number, className: string): HTMLSpanElement {
+  const { icon, label } = getWeatherInfo(code);
+  return createEl("span", {
+    className,
+    text: icon,
+    attrs: { role: "img", "aria-label": label },
+  });
+}
+
+function detail(term: string, value: string): HTMLDivElement {
+  return createEl("div", { className: "current__detail" }, [
+    createEl("dt", { text: term }),
+    createEl("dd", { text: value }),
+  ]);
+}
+
+function renderCurrent(
+  els: Elements,
+  city: City | null,
+  current: CurrentWeather,
+  state: Readonly<AppState>,
+): void {
+  const { label } = getWeatherInfo(current.weatherCode);
+  els.current.replaceChildren(
+    createEl("h2", {
+      className: "current__place",
+      text: city === null ? "Current weather" : formatCityLabel(city),
+      attrs: { id: "current-heading" },
+    }),
+    createEl("div", { className: "current__main" }, [
+      weatherIcon(current.weatherCode, "current__icon"),
+      createEl("p", {
+        className: "current__temp",
+        text: formatTemperature(current.temperatureC, state.unit),
+      }),
+    ]),
+    createEl("p", { className: "current__condition", text: label }),
+    createEl("dl", { className: "current__details" }, [
+      detail("Feels like", formatTemperature(current.feelsLikeC, state.unit)),
+      detail("Humidity", `${Math.round(current.humidityPercent)}%`),
+      detail("Wind", formatWindSpeed(current.windSpeedKmh, "kmh")),
+    ]),
+  );
+}
+
+function renderForecastList(
+  els: Elements,
+  days: DailyForecast[],
+  state: Readonly<AppState>,
+): void {
+  const items = days.map((day, index) =>
+    createEl("li", { className: "forecast__day" }, [
+      createEl("span", {
+        className: "forecast__name",
+        text: forecastDayLabel(day.date, index),
+      }),
+      weatherIcon(day.weatherCode, "forecast__icon"),
+      createEl("span", { className: "forecast__temps" }, [
+        createEl("span", { className: "visually-hidden", text: "High " }),
+        createEl("span", {
+          className: "forecast__max",
+          text: formatTemperature(day.maxTemperatureC, state.unit),
+        }),
+        createEl("span", { className: "visually-hidden", text: ", low " }),
+        createEl("span", {
+          className: "forecast__min",
+          text: formatTemperature(day.minTemperatureC, state.unit),
+        }),
+      ]),
+    ]),
+  );
+  els.forecastList.replaceChildren(...items);
+}
+
+function renderWeather(els: Elements, state: Readonly<AppState>): void {
+  const { forecast } = state;
+  switch (forecast.status) {
+    case "idle":
+    case "loading":
+    case "error":
+      // Messages for these go in the status region; hide stale weather.
+      els.current.hidden = true;
+      els.forecast.hidden = true;
+      return;
+    case "success":
+      renderCurrent(els, state.selectedCity, forecast.data.current, state);
+      renderForecastList(els, forecast.data.daily, state);
+      els.current.hidden = false;
+      els.forecast.hidden = false;
+      return;
+    default:
+      assertNever(forecast);
   }
 }
 
@@ -75,4 +184,5 @@ export function render(
 ): void {
   renderSearch(els, state, handlers);
   renderStatus(els, state);
+  renderWeather(els, state);
 }

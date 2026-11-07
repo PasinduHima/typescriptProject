@@ -41,3 +41,22 @@ body {
 .search__option:hover {
   background: #dde8ff;
 }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.forecast__list {
+  padding: 0;
+  list-style: none;
+}
+
+.forecast__day {
+  display: flex;
+  justify-content: space-between;
+}
