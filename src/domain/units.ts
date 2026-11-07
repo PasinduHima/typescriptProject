@@ -37,3 +37,25 @@ export function formatWindSpeed(kmh: number, unit: WindUnit): string {
       return assertNever(unit);
   }
 }
+
+export const TEMP_UNITS = [
+  "celsius",
+  "fahrenheit",
+] as const satisfies readonly TempUnit[];
+
+/** Type guard: narrows a plain string (e.g. a radio input's value) to TempUnit. */
+export function isTempUnit(value: string): value is TempUnit {
+  return TEMP_UNITS.some((unit) => unit === value);
+}
+
+/** Wind follows the temperature unit: metric → km/h, imperial → mph. */
+export function windUnitFor(unit: TempUnit): WindUnit {
+  switch (unit) {
+    case "celsius":
+      return "kmh";
+    case "fahrenheit":
+      return "mph";
+    default:
+      return assertNever(unit);
+  }
+}

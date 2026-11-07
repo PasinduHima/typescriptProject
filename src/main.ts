@@ -3,7 +3,10 @@ import { getForecast } from "./api/forecast.ts";
 import { MIN_QUERY_LENGTH, searchCities } from "./api/geocoding.ts";
 import { formatCityLabel } from "./domain/cityLabel.ts";
 import type { City } from "./domain/types.ts";
+import { isTempUnit } from "./domain/units.ts";
 import { debounce } from "./lib/debounce.ts";
+import { getLocalStorage, readEntry, writeEntry } from "./lib/storage.ts";
+import { LAST_CITY, UNIT } from "./persistence.ts";
 import { createInitialState, createStore } from "./state.ts";
 import { getEl } from "./ui/dom.ts";
 import { moveActiveIndex } from "./ui/listNavigation.ts";
@@ -19,15 +22,24 @@ const els: Elements = {
   current: getEl("#current", HTMLElement),
   forecast: getEl("#forecast", HTMLElement),
   forecastList: getEl("#forecast-list", HTMLOListElement),
+  unitToggle: getEl("#unit-toggle", HTMLFieldSetElement),
+  unitCelsius: getEl("#unit-celsius", HTMLInputElement),
+  unitFahrenheit: getEl("#unit-fahrenheit", HTMLInputElement),
 };
+
+const storage = getLocalStorage();
 
 const handlers: Handlers = {
   onSelectCity: selectCity,
 };
 
-const store = createStore(createInitialState(), (state) => {
-  render(els, state, handlers);
-});
+const initialState = createInitialState();
+const store = createStore(
+  { ...initialState, unit: readEntry(storage, UNIT) ?? initialState.unit },
+  (state) => {
+    render(els, state, handlers);
+  },
+);
 
 // ---------- Search ----------
 
@@ -157,11 +169,24 @@ function selectCity(city: City): void {
     isListOpen: false,
     activeIndex: null,
   });
+  writeEntry(storage, LAST_CITY, city);
   void loadForecast(city);
+}
+
+// ---------- Units ----------
+
+function onUnitChange(event: Event): void {
+  if (!(event.target instanceof HTMLInputElement)) return;
+  const unit = event.target.value;
+  if (!isTempUnit(unit)) return;
+  // Re-render only: everything is stored in metric, so no refetch is needed.
+  store.update({ unit });
+  writeEntry(storage, UNIT, unit);
 }
 
 els.input.addEventListener("input", onInput);
 els.input.addEventListener("keydown", onKeyDown);
+els.unitToggle.addEventListener("change", onUnitChange);
 document.addEventListener("click", (event) => {
   if (event.target instanceof Node && els.combobox.contains(event.target)) {
     return;
@@ -170,3 +195,12 @@ document.addEventListener("click", (event) => {
 });
 
 render(els, store.getState(), handlers);
+
+// Restore the last city (the unit was restored into the initial state above).
+const lastCity = readEntry(storage, LAST_CITY);
+if (lastCity !== null) {
+  const label = formatCityLabel(lastCity);
+  els.input.value = label;
+  store.update({ query: label, selectedCity: lastCity });
+  void loadForecast(lastCity);
+}

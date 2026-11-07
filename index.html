@@ -37,6 +37,33 @@
             hidden
           ></ul>
         </div>
+
+        <fieldset class="unit-toggle" id="unit-toggle">
+          <legend class="unit-toggle__legend">Units</legend>
+          <label class="unit-toggle__option">
+            <input
+              id="unit-celsius"
+              class="unit-toggle__input"
+              type="radio"
+              name="unit"
+              value="celsius"
+              checked
+            />
+            <span aria-hidden="true">°C</span>
+            <span class="visually-hidden">Celsius</span>
+          </label>
+          <label class="unit-toggle__option">
+            <input
+              id="unit-fahrenheit"
+              class="unit-toggle__input"
+              type="radio"
+              name="unit"
+              value="fahrenheit"
+            />
+            <span aria-hidden="true">°F</span>
+            <span class="visually-hidden">Fahrenheit</span>
+          </label>
+        </fieldset>
       </section>
 
       <p id="status" class="status" role="status" aria-live="polite"></p>

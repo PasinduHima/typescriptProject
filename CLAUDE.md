@@ -216,6 +216,9 @@ Steps 1–2 are done. Steps 3–8 run back to back: after each one, run typechec
 - `timezone` is not part of `City` or the raw schema: nothing uses it, because the forecast call uses `timezone=auto`.
 - The daily arrays in the forecast allow `null` (`z.number().nullable()`); the mapper skips any day with a null or missing value. Arrays of different lengths are an `invalid-response`. The `current` block stays strict.
 
+- The °C/°F toggle also sets wind units (celsius → km/h, fahrenheit → mph) via `windUnitFor()`. Data stays metric in state; switching only re-renders.
+- `localStorage` access goes through `lib/storage.ts` with a `StorageEntry<T>` (key + Zod schema). Bad or outdated data is removed and ignored; storage errors never throw. Keys are versioned (`weather-app:v1:…`) — bump the version if a stored shape changes. Stored schemas live in `src/persistence.ts` and use `satisfies z.ZodType<City>` so they can't drift from the domain types.
+
 ## Git workflow
 
 - Work directly on `main`. No feature branches.

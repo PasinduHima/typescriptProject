@@ -3,7 +3,9 @@ import {
   celsiusToFahrenheit,
   formatTemperature,
   formatWindSpeed,
+  isTempUnit,
   kmhToMph,
+  windUnitFor,
 } from "./units.ts";
 
 describe("celsiusToFahrenheit", () => {
@@ -59,5 +61,25 @@ describe("formatWindSpeed", () => {
   it("formats mph", () => {
     expect(formatWindSpeed(100, "mph")).toBe("62 mph");
     expect(formatWindSpeed(0, "mph")).toBe("0 mph");
+  });
+});
+
+describe("windUnitFor", () => {
+  it("pairs celsius with km/h and fahrenheit with mph", () => {
+    expect(windUnitFor("celsius")).toBe("kmh");
+    expect(windUnitFor("fahrenheit")).toBe("mph");
+  });
+});
+
+describe("isTempUnit", () => {
+  it("accepts the two units", () => {
+    expect(isTempUnit("celsius")).toBe(true);
+    expect(isTempUnit("fahrenheit")).toBe(true);
+  });
+
+  it("rejects anything else", () => {
+    expect(isTempUnit("kelvin")).toBe(false);
+    expect(isTempUnit("")).toBe(false);
+    expect(isTempUnit("Celsius")).toBe(false);
   });
 });

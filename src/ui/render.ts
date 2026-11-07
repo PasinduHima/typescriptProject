@@ -1,7 +1,11 @@
 import { formatCityLabel } from "../domain/cityLabel.ts";
 import { forecastDayLabel } from "../domain/dates.ts";
 import type { City, CurrentWeather, DailyForecast } from "../domain/types.ts";
-import { formatTemperature, formatWindSpeed } from "../domain/units.ts";
+import {
+  formatTemperature,
+  formatWindSpeed,
+  windUnitFor,
+} from "../domain/units.ts";
 import { getWeatherInfo } from "../domain/weatherCodes.ts";
 import { assertNever } from "../lib/assertNever.ts";
 import type { AppState } from "../state.ts";
@@ -16,6 +20,9 @@ export type Elements = {
   current: HTMLElement;
   forecast: HTMLElement;
   forecastList: HTMLOListElement;
+  unitToggle: HTMLFieldSetElement;
+  unitCelsius: HTMLInputElement;
+  unitFahrenheit: HTMLInputElement;
 };
 
 export type Handlers = {
@@ -122,7 +129,10 @@ function renderCurrent(
     createEl("dl", { className: "current__details" }, [
       detail("Feels like", formatTemperature(current.feelsLikeC, state.unit)),
       detail("Humidity", `${Math.round(current.humidityPercent)}%`),
-      detail("Wind", formatWindSpeed(current.windSpeedKmh, "kmh")),
+      detail(
+        "Wind",
+        formatWindSpeed(current.windSpeedKmh, windUnitFor(state.unit)),
+      ),
     ]),
   );
 }
@@ -177,6 +187,13 @@ function renderWeather(els: Elements, state: Readonly<AppState>): void {
   }
 }
 
+// ---------- Units ----------
+
+function renderUnitToggle(els: Elements, state: Readonly<AppState>): void {
+  els.unitCelsius.checked = state.unit === "celsius";
+  els.unitFahrenheit.checked = state.unit === "fahrenheit";
+}
+
 export function render(
   els: Elements,
   state: Readonly<AppState>,
@@ -185,4 +202,5 @@ export function render(
   renderSearch(els, state, handlers);
   renderStatus(els, state);
   renderWeather(els, state);
+  renderUnitToggle(els, state);
 }
