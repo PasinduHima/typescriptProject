@@ -130,7 +130,7 @@ API functions return `Promise<Result<T>>` and **don't throw**. The UI decides wh
 GET https://geocoding-api.open-meteo.com/v1/search?name={query}&count=5&language=en&format=json
 ```
 
-- Fields used per result: `id`, `name`, `latitude`, `longitude`, `country`, `admin1` (region — optional), `timezone`
+- Fields used per result: `id`, `name`, `latitude`, `longitude`, `country` (optional), `admin1` (region — optional). Other fields (`timezone`, `elevation`, `population`, …) are ignored.
 - ⚠️ When nothing matches, the `results` key is **missing entirely**, not an empty array. The schema makes it optional; the mapper treats missing as `[]`.
 - Don't call the API for queries shorter than 2 characters.
 
@@ -189,15 +189,22 @@ Unknown codes fall back to `"Unknown"` — never crash on them.
 
 ## Build order
 
-Do these one at a time and stop after each step so I can review:
+Steps 1–2 are done. Steps 3–8 run back to back: after each one, run typecheck, lint, test and build, then commit with the given message and push.
 
-1. Scaffold: Vite `vanilla-ts`, tsconfig rules above, ESLint, Prettier, Vitest, npm scripts
-2. `lib/result.ts`, `domain/types.ts`, `domain/units.ts`, `domain/weatherCodes.ts` + tests
-3. Zod schemas, fixtures, `api/client.ts`, geocoding, forecast + tests
-4. Search UI: debounce, AbortController, keyboard-navigable results list
-5. Current weather + 5-day forecast rendering
-6. °C / °F toggle + `localStorage` persistence
-7. Polish: loading/error states, styling, attribution footer, README
+1. ✅ Scaffold: Vite `vanilla-ts`, tsconfig rules, ESLint, Prettier, Vitest, npm scripts
+2. ✅ `lib/result.ts`, `lib/assertNever.ts`, `domain/types.ts`, `domain/units.ts`, `domain/weatherCodes.ts` + tests
+3. API layer — `feat: add Zod schemas, API client, geocoding and forecast`
+   Zod v4 raw schemas (snake_case, no `.transform()`), real fixtures, `fetchJson` (never throws), `searchCities`, `getForecast`, exported pure mappers, `formatCityLabel`. Tests mock `fetch` with `vi.stubGlobal`.
+4. Search UI — `feat: add city search with debounce and keyboard navigation`
+   `state.ts` (one state object, one update function that re-renders), `ui/dom.ts` `getEl(selector, Ctor)` with `instanceof`, `lib/debounce.ts` (fake-timer tests), AbortController, ARIA combobox (↑/↓/Enter/Esc, click, click-outside closes).
+5. Weather display — `feat: show current weather and 5-day forecast`
+   Cancel the previous forecast request; current card + 5 days ("Today" first); `domain/formatDayName` (tested); `createElement` + `textContent` only.
+6. Units + persistence — `feat: add °C/°F toggle and remember last city`
+   Accessible two-option toggle; wind follows it (celsius → km/h, fahrenheit → mph); no refetch. `lib/storage.ts` takes `Pick<Storage, "getItem" | "setItem" | "removeItem">`, validates with Zod, removes bad data, try/catch, keys like `weather-app:v1:last-city`. Restore city + unit on startup.
+7. Polish — `feat: polish states, styling and docs`
+   `domain/errors.ts` `formatError` (exhaustive, tested); start / no-results / loading / error messages in the aria-live region; mobile-first CSS with custom properties, light/dark, `:focus-visible`, reduced motion; Open-Meteo footer; README; `docs/TYPESCRIPT_NOTES.md`.
+8. Nice-to-haves — `feat: add use-my-location and day/night styling`
+   Geolocation wrapped as `Promise<Result<Coordinates>>`, new `AppError` kind `"geolocation"` (`"denied" | "unavailable" | "timeout"`), labelled "Your location", not saved. Day/night styling from `isDay`. Update README and notes.
 
 ## Design decisions
 
@@ -205,6 +212,9 @@ Do these one at a time and stop after each step so I can review:
 - `isDay` arrives as `0`/`1` and is mapped to a `boolean` in the API layer.
 - `weatherCode` stays a `number` and always goes through `getWeatherInfo()`.
 - `ok()` / `err()` return `never` on the unused side (`Result<T, never>`, `Result<never, E>`) so they fit any `Result`.
+- In geocoding, `country` and `admin1` are optional in the raw schema and in `City` (`country?`, `region?`), so one odd result can't fail a whole search. `formatCityLabel()` joins name, region and country, skipping missing parts.
+- `timezone` is not part of `City` or the raw schema: nothing uses it, because the forecast call uses `timezone=auto`.
+- The daily arrays in the forecast allow `null` (`z.number().nullable()`); the mapper skips any day with a null or missing value. Arrays of different lengths are an `invalid-response`. The `current` block stays strict.
 
 ## Git workflow
 

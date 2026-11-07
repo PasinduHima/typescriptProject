@@ -10,8 +10,7 @@ export type City = Coordinates & {
   id: number;
   name: string;
   region?: string; // admin1, e.g. "Western Province"
-  country: string;
-  timezone: string;
+  country?: string;
 };
 
 export type CurrentWeather = {
