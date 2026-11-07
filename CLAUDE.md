@@ -59,10 +59,10 @@ src/
 │   ├── schemas.ts        # Zod schemas for RAW API responses
 │   └── __fixtures__/     # real JSON responses for tests
 ├── domain/
-│   ├── types.ts          # app-facing types: Coordinates, City, Forecast, AppError, …
+│   ├── types.ts          # app-facing types: Coordinates, City, Place, Forecast, AppError, …
 │   ├── weatherCodes.ts   # WMO code → label + icon
 │   ├── units.ts          # °C/°F, km/h/mph conversion + formatting, windUnitFor
-│   ├── cityLabel.ts      # formatCityLabel(city)
+│   ├── cityLabel.ts      # formatCityLabel, formatPlaceLabel, placeCoordinates
 │   ├── dates.ts          # formatDayName, forecastDayLabel ("Today")
 │   └── errors.ts         # formatError(AppError) → user-facing message
 ├── ui/
@@ -74,6 +74,7 @@ src/
 │   ├── result.ts         # Result<T, E> type + ok() / err()
 │   ├── assertNever.ts    # exhaustive-switch helper
 │   ├── storage.ts        # typed localStorage wrapper (validates with Zod on read)
+│   ├── geolocation.ts    # getCurrentCoordinates() → Promise<Result<Coordinates>>
 │   └── debounce.ts
 └── styles.css
 docs/
@@ -229,6 +230,9 @@ Steps 1–2 are done. Steps 3–8 run back to back: after each one, run typechec
 - `localStorage` access goes through `lib/storage.ts` with a `StorageEntry<T>` (key + Zod schema). Bad or outdated data is removed and ignored; storage errors never throw. Keys are versioned (`weather-app:v1:…`) — bump the version if a stored shape changes. Stored schemas live in `src/persistence.ts` and use `satisfies z.ZodType<City>` so they can't drift from the domain types.
 
 - User-facing error text comes only from `formatError()` (exhaustive switch). Raw Zod issues are never shown to users. Status messages (start / searching / no results / loading / errors) come from `getStatusMessage(state)` and go in the single aria-live region.
+- The selected place is a discriminated union `Place = { kind: "city"; city } | { kind: "my-location"; coordinates }` (state field `selectedPlace`). Use `formatPlaceLabel()` / `placeCoordinates()` instead of reaching into it.
+- "Use my location": `lib/geolocation.ts` wraps `getCurrentPosition` as `Promise<Result<Coordinates>>`; failures are `AppError` `{ kind: "geolocation"; reason: GeolocationReason }`, and a browser without geolocation counts as `"unavailable"`. The position is labelled "Your location" (no reverse geocoding) and is **not** saved to storage. A counter (`placeRequest`) makes sure a slow location answer can't replace a city picked meanwhile.
+- Day/night: `renderCurrent` sets `data-time="day" | "night"` on the current-weather card from `isDay`; CSS sets the card's colors per value (in both light and dark themes).
 
 ## Git workflow
 

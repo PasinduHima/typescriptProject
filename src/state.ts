@@ -1,4 +1,10 @@
-import type { AppError, City, Forecast, TempUnit } from "./domain/types.ts";
+import type {
+  AppError,
+  City,
+  Forecast,
+  Place,
+  TempUnit,
+} from "./domain/types.ts";
 
 export type LoadState<T> =
   | { status: "idle" }
@@ -12,7 +18,9 @@ export type AppState = {
   isListOpen: boolean;
   /** Index of the highlighted option in the results list, or null for none. */
   activeIndex: number | null;
-  selectedCity: City | null;
+  selectedPlace: Place | null;
+  /** True while waiting for the browser's geolocation answer. */
+  locating: boolean;
   forecast: LoadState<Forecast>;
   unit: TempUnit;
 };
@@ -23,7 +31,8 @@ export function createInitialState(): AppState {
     search: { status: "idle" },
     isListOpen: false,
     activeIndex: null,
-    selectedCity: null,
+    selectedPlace: null,
+    locating: false,
     forecast: { status: "idle" },
     unit: "celsius",
   };

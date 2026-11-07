@@ -1,4 +1,4 @@
-import { formatCityLabel } from "../domain/cityLabel.ts";
+import { formatPlaceLabel } from "../domain/cityLabel.ts";
 import { formatError } from "../domain/errors.ts";
 import { assertNever } from "../lib/assertNever.ts";
 import type { AppState } from "../state.ts";
@@ -37,15 +37,15 @@ function searchMessage(state: Readonly<AppState>): StatusMessage | null {
 }
 
 function forecastMessage(state: Readonly<AppState>): StatusMessage {
-  const { forecast, selectedCity } = state;
+  const { forecast, selectedPlace } = state;
   switch (forecast.status) {
     case "idle":
-      return info(selectedCity === null ? START_MESSAGE : "");
+      return info(selectedPlace === null ? START_MESSAGE : "");
     case "loading":
       return info(
-        selectedCity === null
+        selectedPlace === null
           ? "Loading weather…"
-          : `Loading weather for ${formatCityLabel(selectedCity)}…`,
+          : `Loading weather for ${formatPlaceLabel(selectedPlace)}…`,
       );
     case "error":
       return { text: formatError(forecast.error), tone: "error" };
@@ -58,5 +58,6 @@ function forecastMessage(state: Readonly<AppState>): StatusMessage {
 
 /** The message for the aria-live status region. Search messages win while the user is searching. */
 export function getStatusMessage(state: Readonly<AppState>): StatusMessage {
+  if (state.locating) return info("Finding your location…");
   return searchMessage(state) ?? forecastMessage(state);
 }

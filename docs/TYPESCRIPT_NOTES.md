@@ -44,6 +44,10 @@ A study sheet: every TypeScript feature used in this project, with where to find
 
 A union whose members share a literal "tag" field: `ok: true | false` in `Result`, `kind` in `AppError`, `status` in `LoadState`. Checking the tag tells TypeScript exactly which member you have.
 
+### Discriminated unions for domain choices — `src/domain/types.ts`, `src/domain/cityLabel.ts`
+
+`Place = { kind: "city"; city: City } | { kind: "my-location"; coordinates: Coordinates }` models "what are we showing weather for". `formatPlaceLabel` and `placeCoordinates` switch on `kind`, so each case only sees its own fields.
+
 ### Narrowing — `src/main.ts`, `src/ui/render.ts`
 
 Inside `if (result.ok) { … }` TypeScript knows `result.value` exists; in the `else` it knows `result.error` exists. The same happens in each `case` of a `switch`, after `=== null` checks, and after `typeof x === "string"`.
@@ -51,6 +55,10 @@ Inside `if (result.ok) { … }` TypeScript knows `result.value` exists; in the `
 ### `never` and exhaustive switches — `src/lib/assertNever.ts`, `src/domain/errors.ts`
 
 `never` is the type with no values. After a `switch` handles every union member, the leftover is `never`, so `default: return assertNever(x)` compiles. Add a new member and that line errors until you handle it.
+
+### Letting the compiler find the work — `src/domain/errors.ts`
+
+Adding `{ kind: "geolocation"; reason: GeolocationReason }` to `AppError` made `npm run typecheck` fail at exactly one line: `assertNever(error)` in `formatError`. That error is the to-do list for a new union member.
 
 ### `never` on the unused side — `src/lib/result.ts`
 
@@ -88,9 +96,9 @@ Makes every property optional. `update(changes: Partial<AppState>)` lets callers
 
 Makes properties read-only. The UI receives `Readonly<AppState>`, so it can't change state except through `update()`.
 
-### `Pick<T, Keys>` — `src/lib/storage.ts`, `src/domain/cityLabel.ts`
+### `Pick<T, Keys>` — `src/lib/storage.ts`, `src/lib/geolocation.ts`, `src/domain/cityLabel.ts`
 
-Builds a type from some of another type's properties. `Pick<Storage, "getItem" | "setItem" | "removeItem">` lets tests pass a small fake instead of real `localStorage`.
+Builds a type from some of another type's properties. `Pick<Storage, "getItem" | "setItem" | "removeItem">` and `Pick<Geolocation, "getCurrentPosition">` let tests pass small fakes instead of real browser APIs.
 
 ### `Record<K, V>` — `src/domain/weatherCodes.ts`
 
@@ -157,6 +165,18 @@ In strict mode, `catch (error)` gives `error: unknown`, because anything can be 
 ### `async` / `Promise<Result<T>>` — `src/api/*.ts`
 
 `async function searchCities(…): Promise<Result<City[]>>` always resolves — failures are values, not exceptions — so callers just check `.ok` after `await`.
+
+### Wrapping callbacks in a Promise — `src/lib/geolocation.ts`
+
+`new Promise<Result<Coordinates>>((resolve) => { geolocation.getCurrentPosition(onOk, onError) })` turns a callback API into something you can `await`. Both callbacks call `resolve` (never `reject`), so the Promise always gives back a `Result`.
+
+### `in` operator — `src/main.ts`
+
+`"geolocation" in navigator` checks at runtime that a property exists. The DOM types claim `navigator.geolocation` is always there, but some browsers don't provide it, so we check before using it.
+
+### Numeric separators — `src/lib/geolocation.ts`
+
+`10_000` is the same number as `10000`; the underscore is only for readability.
 
 ### `void` for fire-and-forget promises — `src/main.ts`
 

@@ -55,7 +55,7 @@ describe("getStatusMessage", () => {
 
   it("shows forecast loading with the city name", () => {
     const state = stateWith({
-      selectedCity: colombo,
+      selectedPlace: { kind: "city", city: colombo },
       forecast: { status: "loading" },
     });
     expect(getStatusMessage(state).text).toBe(
@@ -63,15 +63,42 @@ describe("getStatusMessage", () => {
     );
   });
 
+  it("shows a message while locating, and the location label while loading", () => {
+    expect(getStatusMessage(stateWith({ locating: true })).text).toBe(
+      "Finding your location…",
+    );
+    const state = stateWith({
+      selectedPlace: {
+        kind: "my-location",
+        coordinates: { latitude: 7.29, longitude: 80.63 },
+      },
+      forecast: { status: "loading" },
+    });
+    expect(getStatusMessage(state).text).toBe(
+      "Loading weather for Your location…",
+    );
+  });
+
+  it("shows geolocation errors with the error tone", () => {
+    const state = stateWith({
+      forecast: {
+        status: "error",
+        error: { kind: "geolocation", reason: "denied" },
+      },
+    });
+    expect(getStatusMessage(state).tone).toBe("error");
+    expect(getStatusMessage(state).text).toMatch(/denied/);
+  });
+
   it("shows forecast errors and stays quiet on success", () => {
     const failed = stateWith({
-      selectedCity: colombo,
+      selectedPlace: { kind: "city", city: colombo },
       forecast: { status: "error", error: { kind: "network", message: "x" } },
     });
     expect(getStatusMessage(failed).tone).toBe("error");
 
     const loaded = stateWith({
-      selectedCity: colombo,
+      selectedPlace: { kind: "city", city: colombo },
       forecast: {
         status: "success",
         data: {

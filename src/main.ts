@@ -1,10 +1,11 @@
 import "./styles.css";
 import { getForecast } from "./api/forecast.ts";
 import { MIN_QUERY_LENGTH, searchCities } from "./api/geocoding.ts";
-import { formatCityLabel } from "./domain/cityLabel.ts";
-import type { City } from "./domain/types.ts";
+import { formatCityLabel, placeCoordinates } from "./domain/cityLabel.ts";
+import type { City, Place } from "./domain/types.ts";
 import { isTempUnit } from "./domain/units.ts";
 import { debounce } from "./lib/debounce.ts";
+import { getCurrentCoordinates } from "./lib/geolocation.ts";
 import { getLocalStorage, readEntry, writeEntry } from "./lib/storage.ts";
 import { LAST_CITY, UNIT } from "./persistence.ts";
 import { createInitialState, createStore } from "./state.ts";
@@ -25,6 +26,7 @@ const els: Elements = {
   unitToggle: getEl("#unit-toggle", HTMLFieldSetElement),
   unitCelsius: getEl("#unit-celsius", HTMLInputElement),
   unitFahrenheit: getEl("#unit-fahrenheit", HTMLInputElement),
+  locate: getEl("#locate", HTMLButtonElement),
 };
 
 const storage = getLocalStorage();
@@ -140,15 +142,15 @@ function onKeyDown(event: KeyboardEvent): void {
 
 let forecastController: AbortController | null = null;
 
-async function loadForecast(city: City): Promise<void> {
+async function loadForecast(place: Place): Promise<void> {
   forecastController?.abort();
   const controller = new AbortController();
   forecastController = controller;
 
   store.update({ forecast: { status: "loading" } });
-  const result = await getForecast(city, controller.signal);
+  const result = await getForecast(placeCoordinates(place), controller.signal);
 
-  // The user picked another city while this one was loading.
+  // The user picked another place while this one was loading.
   if (controller !== forecastController) return;
 
   if (result.ok) {
@@ -158,19 +160,68 @@ async function loadForecast(city: City): Promise<void> {
   }
 }
 
+// Bumped whenever the user picks a place, so a slow geolocation answer
+// can't replace a city chosen in the meantime.
+let placeRequest = 0;
+
 function selectCity(city: City): void {
+  placeRequest++;
   cancelSearch();
   const label = formatCityLabel(city);
   els.input.value = label;
   els.input.focus();
   store.update({
     query: label,
-    selectedCity: city,
+    selectedPlace: { kind: "city", city },
+    locating: false,
     isListOpen: false,
     activeIndex: null,
   });
   writeEntry(storage, LAST_CITY, city);
-  void loadForecast(city);
+  void loadForecast({ kind: "city", city });
+}
+
+// ---------- My location ----------
+
+// The DOM types say navigator.geolocation always exists, but some browsers
+// (or insecure http:// pages) don't provide it.
+const geolocation =
+  "geolocation" in navigator ? navigator.geolocation : undefined;
+
+async function useMyLocation(): Promise<void> {
+  if (store.getState().locating) return;
+  const request = ++placeRequest;
+  cancelSearch();
+  forecastController?.abort();
+  forecastController = null;
+  store.update({
+    locating: true,
+    isListOpen: false,
+    activeIndex: null,
+    forecast: { status: "idle" },
+  });
+
+  const result = await getCurrentCoordinates(geolocation);
+  if (request !== placeRequest) return; // the user picked a city meanwhile
+
+  if (!result.ok) {
+    store.update({
+      locating: false,
+      forecast: { status: "error", error: result.error },
+    });
+    return;
+  }
+
+  // Not saved to storage: "last city" only remembers searched cities.
+  const place: Place = { kind: "my-location", coordinates: result.value };
+  els.input.value = "";
+  store.update({
+    locating: false,
+    query: "",
+    search: { status: "idle" },
+    selectedPlace: place,
+  });
+  void loadForecast(place);
 }
 
 // ---------- Units ----------
@@ -187,6 +238,9 @@ function onUnitChange(event: Event): void {
 els.input.addEventListener("input", onInput);
 els.input.addEventListener("keydown", onKeyDown);
 els.unitToggle.addEventListener("change", onUnitChange);
+els.locate.addEventListener("click", () => {
+  void useMyLocation();
+});
 document.addEventListener("click", (event) => {
   if (event.target instanceof Node && els.combobox.contains(event.target)) {
     return;
@@ -201,6 +255,7 @@ const lastCity = readEntry(storage, LAST_CITY);
 if (lastCity !== null) {
   const label = formatCityLabel(lastCity);
   els.input.value = label;
-  store.update({ query: label, selectedCity: lastCity });
-  void loadForecast(lastCity);
+  const place: Place = { kind: "city", city: lastCity };
+  store.update({ query: label, selectedPlace: place });
+  void loadForecast(place);
 }

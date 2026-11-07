@@ -38,4 +38,16 @@ describe("formatError", () => {
   it("shows nothing for aborted requests", () => {
     expect(formatError({ kind: "aborted" })).toBe("");
   });
+
+  it("explains each geolocation failure", () => {
+    expect(formatError({ kind: "geolocation", reason: "denied" })).toMatch(
+      /denied/,
+    );
+    expect(formatError({ kind: "geolocation", reason: "unavailable" })).toMatch(
+      /isn't available/,
+    );
+    expect(formatError({ kind: "geolocation", reason: "timeout" })).toMatch(
+      /too long/,
+    );
+  });
 });

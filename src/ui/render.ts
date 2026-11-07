@@ -1,6 +1,11 @@
-import { formatCityLabel } from "../domain/cityLabel.ts";
+import { formatCityLabel, formatPlaceLabel } from "../domain/cityLabel.ts";
 import { forecastDayLabel } from "../domain/dates.ts";
-import type { City, CurrentWeather, DailyForecast } from "../domain/types.ts";
+import type {
+  City,
+  CurrentWeather,
+  DailyForecast,
+  Place,
+} from "../domain/types.ts";
 import {
   formatTemperature,
   formatWindSpeed,
@@ -23,6 +28,7 @@ export type Elements = {
   unitToggle: HTMLFieldSetElement;
   unitCelsius: HTMLInputElement;
   unitFahrenheit: HTMLInputElement;
+  locate: HTMLButtonElement;
 };
 
 export type Handlers = {
@@ -108,15 +114,17 @@ function detail(term: string, value: string): HTMLDivElement {
 
 function renderCurrent(
   els: Elements,
-  city: City | null,
+  place: Place | null,
   current: CurrentWeather,
   state: Readonly<AppState>,
 ): void {
   const { label } = getWeatherInfo(current.weatherCode);
+  // Drives the day/night card styling in CSS.
+  els.current.dataset.time = current.isDay ? "day" : "night";
   els.current.replaceChildren(
     createEl("h2", {
       className: "current__place",
-      text: city === null ? "Current weather" : formatCityLabel(city),
+      text: place === null ? "Current weather" : formatPlaceLabel(place),
       attrs: { id: "current-heading" },
     }),
     createEl("div", { className: "current__main" }, [
@@ -178,7 +186,7 @@ function renderWeather(els: Elements, state: Readonly<AppState>): void {
       els.forecast.hidden = true;
       return;
     case "success":
-      renderCurrent(els, state.selectedCity, forecast.data.current, state);
+      renderCurrent(els, state.selectedPlace, forecast.data.current, state);
       renderForecastList(els, forecast.data.daily, state);
       els.current.hidden = false;
       els.forecast.hidden = false;
@@ -204,4 +212,5 @@ export function render(
   renderStatus(els, state);
   renderWeather(els, state);
   renderUnitToggle(els, state);
+  els.locate.setAttribute("aria-disabled", String(state.locating));
 }

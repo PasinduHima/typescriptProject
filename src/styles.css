@@ -221,6 +221,33 @@ a {
   box-shadow: var(--focus-ring);
 }
 
+/* ---------- Use my location ---------- */
+
+.locate-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+  padding-inline: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition);
+}
+
+.locate-button:hover {
+  background: var(--color-highlight);
+}
+
+.locate-button[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
 /* ---------- Status (aria-live) ---------- */
 
 .status {
@@ -248,6 +275,36 @@ a {
 .current {
   display: grid;
   gap: var(--space-2);
+  background: var(--card-bg, var(--color-surface));
+  color: var(--card-text, var(--color-text));
+}
+
+/* Day/night styling, from data-time="day" | "night" (set from isDay). */
+.current[data-time="day"] {
+  --card-bg: linear-gradient(160deg, #fff4d4, #dcecff);
+  --card-text: #1a2130;
+  --card-muted: #4d5768;
+  --card-detail-bg: rgb(255 255 255 / 60%);
+}
+
+.current[data-time="night"] {
+  --card-bg: linear-gradient(160deg, #1d2748, #332a5e);
+  --card-text: #eef1ff;
+  --card-muted: #b9c0dd;
+  --card-detail-bg: rgb(255 255 255 / 10%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .current[data-time="day"] {
+    --card-bg: linear-gradient(160deg, #2b3a5a, #24476b);
+    --card-text: #eef3ff;
+    --card-muted: #b6c3da;
+    --card-detail-bg: rgb(255 255 255 / 10%);
+  }
+
+  .current[data-time="night"] {
+    --card-bg: linear-gradient(160deg, #10162b, #211a3f);
+  }
 }
 
 .current__main {
@@ -283,11 +340,11 @@ a {
 .current__detail {
   padding: var(--space-2);
   border-radius: var(--radius-small);
-  background: var(--color-bg);
+  background: var(--card-detail-bg, var(--color-bg));
 }
 
 .current__detail dt {
-  color: var(--color-muted);
+  color: var(--card-muted, var(--color-muted));
   font-size: 0.8125rem;
 }
 
