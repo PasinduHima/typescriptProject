@@ -50,25 +50,34 @@ Nice-to-haves (only after the MVP works): "Use my location" via the Geolocation 
 ```
 src/
 ├── main.ts               # entry point: wires events → state → render
-├── state.ts              # app state + LoadState type
+├── state.ts              # AppState, LoadState<T>, createStore (one update() → re-render)
+├── persistence.ts        # what we save in localStorage: StorageEntry keys + Zod schemas
 ├── api/
-│   ├── client.ts         # fetchJson(url, schema, signal) → Promise<Result<T>>
-│   ├── geocoding.ts      # searchCities(query, signal)
-│   ├── forecast.ts       # getForecast(lat, lon, signal)
+│   ├── client.ts         # fetchJson(url, schema, signal) → Promise<Result<T>>, never throws
+│   ├── geocoding.ts      # searchCities(query, signal) + raw → City mapper
+│   ├── forecast.ts       # getForecast(coords, signal) + mappers (zipDaily, mapCurrent)
 │   ├── schemas.ts        # Zod schemas for RAW API responses
-│   └── __fixtures__/     # sample JSON responses for tests
+│   └── __fixtures__/     # real JSON responses for tests
 ├── domain/
-│   ├── types.ts          # app-facing types: City, CurrentWeather, DailyForecast, AppError
-│   ├── weatherCodes.ts   # WMO code → label + icon (emoji is fine for MVP)
-│   └── units.ts          # °C/°F, km/h/mph conversion + formatting
+│   ├── types.ts          # app-facing types: Coordinates, City, Forecast, AppError, …
+│   ├── weatherCodes.ts   # WMO code → label + icon
+│   ├── units.ts          # °C/°F, km/h/mph conversion + formatting, windUnitFor
+│   ├── cityLabel.ts      # formatCityLabel(city)
+│   ├── dates.ts          # formatDayName, forecastDayLabel ("Today")
+│   └── errors.ts         # formatError(AppError) → user-facing message
 ├── ui/
-│   ├── dom.ts            # typed DOM helpers, e.g. getEl<T extends HTMLElement>(selector)
-│   └── render.ts         # render functions per section (search, current, forecast, status)
+│   ├── dom.ts            # getEl(selector, Ctor), createEl(tag, options, children)
+│   ├── render.ts         # render functions per section (search, status, weather, units)
+│   ├── statusMessage.ts  # getStatusMessage(state) for the aria-live region
+│   └── listNavigation.ts # moveActiveIndex for ↑/↓ in the results list
 ├── lib/
-│   ├── result.ts         # Result<T, E> type + helpers
+│   ├── result.ts         # Result<T, E> type + ok() / err()
+│   ├── assertNever.ts    # exhaustive-switch helper
 │   ├── storage.ts        # typed localStorage wrapper (validates with Zod on read)
 │   └── debounce.ts
 └── styles.css
+docs/
+└── TYPESCRIPT_NOTES.md   # study sheet: every TS feature used, with file references
 ```
 
 Tests sit next to the code they test: `units.test.ts` beside `units.ts`.
@@ -218,6 +227,8 @@ Steps 1–2 are done. Steps 3–8 run back to back: after each one, run typechec
 
 - The °C/°F toggle also sets wind units (celsius → km/h, fahrenheit → mph) via `windUnitFor()`. Data stays metric in state; switching only re-renders.
 - `localStorage` access goes through `lib/storage.ts` with a `StorageEntry<T>` (key + Zod schema). Bad or outdated data is removed and ignored; storage errors never throw. Keys are versioned (`weather-app:v1:…`) — bump the version if a stored shape changes. Stored schemas live in `src/persistence.ts` and use `satisfies z.ZodType<City>` so they can't drift from the domain types.
+
+- User-facing error text comes only from `formatError()` (exhaustive switch). Raw Zod issues are never shown to users. Status messages (start / searching / no results / loading / errors) come from `getStatusMessage(state)` and go in the single aria-live region.
 
 ## Git workflow
 

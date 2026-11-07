@@ -1,46 +1,62 @@
 import { formatCityLabel } from "../domain/cityLabel.ts";
+import { formatError } from "../domain/errors.ts";
 import { assertNever } from "../lib/assertNever.ts";
 import type { AppState } from "../state.ts";
 
-function searchMessage(state: Readonly<AppState>): string | null {
+export type StatusMessage = {
+  text: string;
+  tone: "info" | "error";
+};
+
+export const START_MESSAGE = "Search for a city to see the weather.";
+
+function info(text: string): StatusMessage {
+  return { text, tone: "info" };
+}
+
+function searchMessage(state: Readonly<AppState>): StatusMessage | null {
   const { search } = state;
   switch (search.status) {
     case "idle":
       return null;
     case "loading":
-      return "Searching…";
+      return info("Searching…");
     case "error":
-      return "Search failed. Please try again.";
+      return { text: formatError(search.error), tone: "error" };
     case "success": {
       if (!state.isListOpen) return null;
       const n = search.data.length;
-      if (n === 0) return `No places found for “${state.query.trim()}”.`;
-      return `${n} ${n === 1 ? "place" : "places"} found. Use the up and down arrow keys to choose.`;
+      if (n === 0) return info(`No places found for “${state.query.trim()}”.`);
+      return info(
+        `${n} ${n === 1 ? "place" : "places"} found. Use the up and down arrow keys to choose.`,
+      );
     }
     default:
       return assertNever(search);
   }
 }
 
-function forecastMessage(state: Readonly<AppState>): string {
+function forecastMessage(state: Readonly<AppState>): StatusMessage {
   const { forecast, selectedCity } = state;
   switch (forecast.status) {
     case "idle":
-      return "";
+      return info(selectedCity === null ? START_MESSAGE : "");
     case "loading":
-      return selectedCity === null
-        ? "Loading weather…"
-        : `Loading weather for ${formatCityLabel(selectedCity)}…`;
+      return info(
+        selectedCity === null
+          ? "Loading weather…"
+          : `Loading weather for ${formatCityLabel(selectedCity)}…`,
+      );
     case "error":
-      return "Couldn't load the weather. Please try again.";
+      return { text: formatError(forecast.error), tone: "error" };
     case "success":
-      return "";
+      return info("");
     default:
       return assertNever(forecast);
   }
 }
 
-/** The text for the aria-live status region. Search messages win while the user is searching. */
-export function getStatusMessage(state: Readonly<AppState>): string {
+/** The message for the aria-live status region. Search messages win while the user is searching. */
+export function getStatusMessage(state: Readonly<AppState>): StatusMessage {
   return searchMessage(state) ?? forecastMessage(state);
 }

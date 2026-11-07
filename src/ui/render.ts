@@ -79,10 +79,11 @@ function renderSearch(
 // ---------- Status ----------
 
 function renderStatus(els: Elements, state: Readonly<AppState>): void {
-  const message = getStatusMessage(state);
+  const { text, tone } = getStatusMessage(state);
+  els.status.dataset.tone = tone;
   // Only touch the live region when the text changes, so it isn't re-announced.
-  if (els.status.textContent !== message) {
-    els.status.textContent = message;
+  if (els.status.textContent !== text) {
+    els.status.textContent = text;
   }
 }
 

@@ -1,45 +1,99 @@
-/* Minimal styles for the search UI. Full styling comes in step 7. */
-body {
-  font-family: system-ui, sans-serif;
-  margin: 0 auto;
-  max-width: 40rem;
-  padding: 1rem;
+/* ---------- Design tokens ---------- */
+
+:root {
+  color-scheme: light dark;
+
+  --color-bg: #f3f5fa;
+  --color-surface: #ffffff;
+  --color-text: #1a2130;
+  --color-muted: #566072;
+  --color-border: #d3d9e4;
+  --color-accent: #2c63d1;
+  --color-accent-text: #ffffff;
+  --color-highlight: #e2eaff;
+  --color-error: #b3261e;
+
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --radius: 0.75rem;
+  --radius-small: 0.5rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --shadow: 0 1px 2px rgb(0 0 0 / 6%), 0 6px 20px rgb(0 0 0 / 6%);
+  --focus-ring: 0 0 0 3px
+    color-mix(in srgb, var(--color-accent) 45%, transparent);
+  --transition: 150ms ease;
 }
 
-.search__label {
-  display: block;
-  margin-bottom: 0.25rem;
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0e131b;
+    --color-surface: #17202b;
+    --color-text: #e5e9f0;
+    --color-muted: #9ba6b8;
+    --color-border: #2b3645;
+    --color-accent: #82adff;
+    --color-accent-text: #0e131b;
+    --color-highlight: #23324b;
+    --color-error: #ffb4ab;
+    --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 6px 20px rgb(0 0 0 / 30%);
+  }
 }
 
-.search__combobox {
-  position: relative;
-}
+/* ---------- Base ---------- */
 
-.search__input {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
-  width: 100%;
-  padding: 0.5rem;
-  font: inherit;
 }
 
-.search__results {
-  position: absolute;
-  inset-inline: 0;
+body {
   margin: 0;
-  padding: 0;
-  list-style: none;
-  background: white;
-  border: 1px solid #888;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  line-height: 1.5;
 }
 
-.search__option {
-  padding: 0.5rem;
-  cursor: pointer;
+.app-header,
+.app,
+.app-footer {
+  width: 100%;
+  max-width: 40rem;
+  margin-inline: auto;
+  padding-inline: var(--space-4);
 }
 
-.search__option[aria-selected="true"],
-.search__option:hover {
-  background: #dde8ff;
+.app-header h1 {
+  margin: var(--space-6) 0 var(--space-4);
+  font-size: 1.5rem;
+}
+
+.app {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+a {
+  color: var(--color-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .visually-hidden {
@@ -51,12 +105,278 @@ body {
   white-space: nowrap;
 }
 
+/* ---------- Search ---------- */
+
+.search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+}
+
+.search__label {
+  flex-basis: 100%;
+  margin-bottom: calc(-1 * var(--space-2));
+  font-weight: 600;
+}
+
+.search__combobox {
+  position: relative;
+  flex: 1 1 14rem;
+}
+
+.search__input {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+}
+
+.search__input:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
+}
+
+.search__results {
+  position: absolute;
+  z-index: 10;
+  inset-inline: 0;
+  top: calc(100% + var(--space-1));
+  max-height: 18rem;
+  margin: 0;
+  padding: var(--space-1);
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+  box-shadow: var(--shadow);
+}
+
+.search__option {
+  padding: var(--space-2) var(--space-3);
+  border-radius: calc(var(--radius-small) - 2px);
+  cursor: pointer;
+}
+
+.search__option:hover,
+.search__option[aria-selected="true"] {
+  background: var(--color-highlight);
+}
+
+/* ---------- Unit toggle (two radios styled as a segmented control) ---------- */
+
+.unit-toggle {
+  display: inline-flex;
+  margin: 0;
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+}
+
+.unit-toggle__legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.unit-toggle__option {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 3rem;
+  min-height: calc(2.75rem - 6px);
+  padding-inline: var(--space-3);
+  border-radius: calc(var(--radius-small) - 2px);
+  cursor: pointer;
+  font-weight: 600;
+  transition:
+    background-color var(--transition),
+    color var(--transition);
+}
+
+.unit-toggle__input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.unit-toggle__option:has(:checked) {
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.unit-toggle__option:has(:focus-visible) {
+  box-shadow: var(--focus-ring);
+}
+
+/* ---------- Status (aria-live) ---------- */
+
+.status {
+  min-height: 1.5em;
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.status[data-tone="error"] {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+/* ---------- Current weather ---------- */
+
+.current,
+.forecast {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  box-shadow: var(--shadow);
+}
+
+.current {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.current__main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.current__icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.current__temp {
+  margin: 0;
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.current__condition {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.current__details {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+}
+
+.current__detail {
+  padding: var(--space-2);
+  border-radius: var(--radius-small);
+  background: var(--color-bg);
+}
+
+.current__detail dt {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.current__detail dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* ---------- Forecast ---------- */
+
 .forecast__list {
+  margin: var(--space-2) 0 0;
   padding: 0;
   list-style: none;
 }
 
 .forecast__day {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.forecast__day:first-child {
+  border-top: none;
+}
+
+.forecast__name {
+  font-weight: 600;
+}
+
+.forecast__icon {
+  font-size: 1.5rem;
+}
+
+.forecast__temps {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.forecast__max {
+  font-weight: 600;
+}
+
+.forecast__min {
+  color: var(--color-muted);
+}
+
+/* ---------- Footer ---------- */
+
+.app-footer {
+  padding-block: var(--space-6);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.app-footer p {
+  margin: 0;
+}
+
+/* ---------- Larger screens ---------- */
+
+@media (min-width: 40rem) {
+  .app-header h1 {
+    font-size: 2rem;
+  }
+
+  .current {
+    padding: var(--space-6);
+  }
+
+  .current__icon,
+  .current__temp {
+    font-size: 4rem;
+  }
+}
+
+/* ---------- Motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
 }
